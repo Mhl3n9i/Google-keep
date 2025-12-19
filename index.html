@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Google Keep</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap">
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f5;
+      --card-bg: #ffffff;
+      --text-primary: #202124;
+      --text-secondary: #5f6368;
+      --border-color: #dadce0;
+      --shadow: 0 1px 2px rgba(60,64,67,0.3), 0 2px 6px rgba(60,64,67,0.15);
+      --note-shadow: 0 1px 1px rgba(0,0,0,0.1);
+      --fab-bg: #e8eaed;
+      --fab-hover: #dadce0;
+      --delete-hover: #ffebee;
+      --transition: all 0.2s ease;
+
+      /* Colors from Keep */
+      --color-red: #f28b82;
+      --color-orange: #fbbc04;
+      --color-yellow: #fff475;
+      --color-green: #ccff90;
+      --color-teal: #a7ffeb;
+      --color-blue: #cbf0f8;
+      --color-indigo: #aecbfa;
+      --color-purple: #d7aefb;
+      --color-pink: #fdcfe8;
+      --color-brown: #e6c9a8;
+      --color-gray: #e8eaed;
+    }
+
+    /* Dark Mode Variables */
+    .dark-mode {
+      --bg-primary: #121212;
+      --bg-secondary: #1e1e1e;
+      --card-bg: #2d2d2d;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa0a6;
+      --border-color: #3c4043;
+      --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
+      --note-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      --fab-bg: #3c4043;
+      --fab-hover: #5f6368;
+      --delete-hover: #371b1e;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: background-color 0.3s, color 0.3s;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ===== NAVIGATION BAR ===== */
+    header {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 56px;
+      background-color: var(--bg-primary);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 500;
+      color: #4285f4;
+      margin-right: 24px;
+    }
+
+    .search-bar {
+      flex: 1;
+      max-width: 560px;
+      position: relative;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-bar input:focus {
+      border-color: #4285f4;
+      box-shadow: 0 0 0 2px rgba(66,133,244,0.2);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 16px;
+    }
+
+    .theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--fab-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 12px;
+      cursor: pointer;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 18px;
+      transition: var(--transition);
+    }
+
+    .theme-toggle:hover {
+      background: var(--fab-hover);
+    }
+
+    .user-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #8ab4f8;
+      margin-left: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 500;
+    }
+
+    /* ===== CREATE NOTE INPUT ===== */
+    .create-note {
+      width: 100%;
+      max-width: 700px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .note-input-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--note-shadow);
+      padding: 16px;
+      cursor: text;
+      transition: var(--transition);
+    }
+
+    .note-input-card:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .note-placeholder {
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 8px 0;
+    }
+
+    /* ===== NOTES GRID ===== */
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 0 16px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .note-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--note-shadow);
+      padding: 16px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      user-select: none;
+    }
+
+    .note-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .note-card.pinned {
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      border-left: 4px solid #4285f4;
+    }
+
+    .pin-icon {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 18px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .note-card:hover .pin-icon {
+      opacity: 1;
+    }
+
+    .note-card.pinned .pin-icon {
+      opacity: 1;
+      color: #4285f4;
+    }
+
+    .note-title {
+      font-weight: 500;
+      font-size: 16px;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+
+    .note-content {
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+
+    .note-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 12px;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.2s, background-color 0.2s;
+    }
+
+    .note-card:hover .delete-btn {
+      opacity: 1;
+    }
+
+    .delete-btn:hover {
+      background-color: var(--delete-hover);
+      color: #d93025;
+    }
+
+    /* Color-coded backgrounds */
+    .note-card[data-color="#f28b82"] { background: var(--color-red); color: #202124; }
+    .note-card[data-color="#fbbc04"] { background: var(--color-orange); color: #202124; }
+    .note-card[data-color="#fff475"] { background: var(--color-yellow); color: #202124; }
+    .note-card[data-color="#ccff90"] { background: var(--color-green); color: #202124; }
+    .note-card[data-color="#a7ffeb"] { background: var(--color-teal); color: #202124; }
+    .note-card[data-color="#cbf0f8"] { background: var(--color-blue); color: #202124; }
+    .note-card[data-color="#aecbfa"] { background: var(--color-indigo); color: #202124; }
+    .note-card[data-color="#d7aefb"] { background: var(--color-purple); color: #202124; }
+    .note-card[data-color="#fdcfe8"] { background: var(--color-pink); color: #202124; }
+    .note-card[data-color="#e6c9a8"] { background: var(--color-brown); color: #202124; }
+    .note-card[data-color="#e8eaed"] { background: var(--color-gray); color: #202124; }
+
+    /* ===== EDITOR MODAL ===== */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border-radius: 8px;
+      width: 95%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: #4285f4;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn:hover {
+      background: rgba(66,133,244,0.1);
+    }
+
+    .btn-close {
+      color: var(--text-secondary);
+    }
+
+    .btn-close:hover {
+      background: rgba(95,99,104,0.1);
+    }
+
+    .modal-body {
+      padding: 16px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      outline: none;
+      resize: none;
+      font-family: inherit;
+    }
+
+    .modal-input.title {
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .color-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .color-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .color-btn.active {
+      border-color: var(--text-primary);
+    }
+
+    /* ===== FAB for Mobile ===== */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #4285f4;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+      z-index: 90;
+      display: none;
+    }
+
+    /* Drag & Drop Styles */
+    .note-card.dragging {
+      opacity: 0.5;
+      transform: scale(1.02);
+      z-index: 10;
+    }
+
+    .note-card.over {
+      transform: scale(1.01);
+      box-shadow: 0 0 0 2px #4285f4;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      header {
+        padding: 0 12px;
+      }
+
+      .search-bar {
+        display: none;
+      }
+
+      .create-note {
+        margin: 16px 0;
+      }
+
+      .fab {
+        display: flex;
+      }
+
+      .note-input-card {
+        display: none;
+      }
+
+      .notes-grid {
+        grid-template-columns: 1fr;
+        padding: 0 12px 80px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body:not(.light-mode) {
+        --bg-primary: #121212;
+        --bg-secondary: #1e1e1e;
+        --card-bg: #2d2d2d;
+        --text-primary: #e8eaed;
+        --text-secondary: #9aa0a6;
+        --border-color: #3c4043;
+        --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
+        --note-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        --fab-bg: #3c4043;
+        --fab-hover: #5f6368;
+        --delete-hover: #371b1e;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <header>
+    <div class="logo">GoogleKeep</div>
+    <div class="search-bar">
+      <span class="search-icon" >🔍</span>
+      <input type="text" placeholder="Search notes" id="search-input" abled />
+    </div>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">
+      🌙
+    </button>
+    <div class="user-icon">U</div>
+  </header>
+
+  <!-- Create Note (Desktop) -->
+  <div class="create-note">
+    <div class="note-input-card" id="create-note-card">
+      <div class="note-placeholder">Take a note...</div>
+    </div>
+  </div>
+
+  <!-- Notes Grid -->
+  <main class="notes-grid" id="notes-grid">
+    <!-- Notes will be injected here -->
+  </main>
+
+  <!-- FAB (Mobile) -->
+  <div class="fab" id="fab">+</div>
+
+  <!-- Note Editor Modal -->
+  <div class="modal" id="note-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Edit note</div>
+        <div class="modal-actions">
+          <button class="btn btn-close" id="modal-close">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <textarea class="modal-input title" id="note-title" placeholder="Title"></textarea>
+        <textarea class="modal-input" id="note-content" placeholder="Take a note..."></textarea>
+        <div class="color-palette" id="color-palette">
+          <!-- Colors inserted by JS -->
+        </div>
+      </div>
+      <div class="modal-actions" style="padding: 12px; border-top: 1px solid var(--border-color);">
+        <button class="btn" id="save-note">Done</button>
+        <button class="btn btn-close" id="cancel-note">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== STATE =====
+    let notes = JSON.parse(localStorage.getItem('keepish-notes')) || [];
+    let currentNoteId = null;
+    let dragStartIndex = null;
+
+    // Default color palette (Google Keep colors)
+    const COLORS = [
+      '#fff', '#f28b82', '#fbbc04', '#fff475', '#ccff90',
+      '#a7ffeb', '#cbf0f8', '#aecbfa', '#d7aefb', '#fdcfe8',
+      '#e6c9a8', '#e8eaed'
+    ];
+
+    // ===== DOM ELEMENTS =====
+    const createNoteCard = document.getElementById('create-note-card');
+    const notesGrid = document.getElementById('notes-grid');
+    const modal = document.getElementById('note-modal');
+    const noteTitle = document.getElementById('note-title');
+    const noteContent = document.getElementById('note-content');
+    const colorPalette = document.getElementById('color-palette');
+    const saveNoteBtn = document.getElementById('save-note');
+    const cancelNoteBtn = document.getElementById('cancel-note');
+    const modalCloseBtn = document.getElementById('modal-close');
+    const fab = document.getElementById('fab');
+    const themeToggle = document.getElementById('theme-toggle');
+    const searchInput = document.getElementById('search-input');
+
+    // ===== INIT =====
+    function init() {
+      renderColorPalette();
+      renderNotes();
+      setupEventListeners();
+      checkSystemTheme();
+    }
+
+    // ===== THEME =====
+    function checkSystemTheme() {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️';
+      } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.textContent = '🌙';
+      }
+    }
+
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      document.body.classList.toggle('light-mode'); // override system
+      themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    });
+
+    // ===== COLOR PALETTE =====
+    function renderColorPalette() {
+      colorPalette.innerHTML = '';
+      COLORS.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn';
+        btn.style.backgroundColor = color;
+        btn.dataset.color = color;
+        if (color === '#fff') btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+        colorPalette.appendChild(btn);
+      });
+    }
+
+    // ===== NOTES RENDERING =====
+    function renderNotes() {
+      // Sort: pinned first, then by timestamp (newest first)
+      const sortedNotes = [...notes].sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+
+      notesGrid.innerHTML = '';
+      sortedNotes.forEach(note => {
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        card.dataset.id = note.id;
+        card.dataset.color = note.color;
+        if (note.pinned) card.classList.add('pinned');
+
+        // Adjust text color for dark backgrounds
+        const luminance = getLuminance(note.color);
+        card.style.color = luminance < 150 ? '#ffffff' : '#202124';
+
+        card.innerHTML = `
+          <button class="delete-btn" aria-label="Delete note">🗑️</button>
+          <span class="pin-icon" data-pinned="${note.pinned}">${note.pinned ? '📌' : '📍'}</span>
+          <div class="note-title">${escapeHtml(note.title)}</div>
+          <div class="note-content">${escapeHtml(note.content)}</div>
+          <div class="note-meta">${formatDate(note.timestamp)}</div>
+        `;
+
+        // Drag events
+        card.draggable = true;
+        card.addEventListener('dragstart', dragStart);
+        card.addEventListener('dragover', dragOver);
+        card.addEventListener('drop', dragDrop);
+        card.addEventListener('dragenter', dragEnter);
+        card.addEventListener('dragleave', dragLeave);
+
+        // Interactions
+        card.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteNote(note.id);
+        });
+
+        card.querySelector('.pin-icon').addEventListener('click', (e) => {
+          e.stopPropagation();
+          togglePin(note.id);
+        });
+
+        card.addEventListener('click', () => editNote(note.id));
+
+        notesGrid.appendChild(card);
+      });
+    }
+
+    // ===== NOTE OPERATIONS =====
+    function addNote(title = '', content = '', color = '#fff', pinned = false) {
+      const note = {
+        id: Date.now(),
+        title: title,
+        content: content,
+        color: color,
+        pinned: pinned,
+        timestamp: new Date().toISOString()
+      };
+      notes.unshift(note);
+      saveNotes();
+      renderNotes();
+      return note.id;
+    }
+
+    function editNote(id) {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+
+      currentNoteId = id;
+      noteTitle.value = note.title;
+      noteContent.value = note.content;
+
+      // Set active color
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.color === note.color);
+      });
+
+      modal.classList.add('active');
+      noteTitle.focus();
+    }
+
+    function saveNote() {
+      const title = noteTitle.value.trim();
+      const content = noteContent.value.trim();
+      const selectedColor = document.querySelector('.color-btn.active')?.dataset.color || '#fff';
+
+      if (!currentNoteId) {
+        // New note
+        addNote(title, content, selectedColor);
+      } else {
+        // Update existing
+        const index = notes.findIndex(n => n.id === currentNoteId);
+        if (index !== -1) {
+          notes[index] = {
+            ...notes[index],
+            title,
+            content,
+            color: selectedColor,
+            timestamp: new Date().toISOString()
+          };
+          saveNotes();
+          renderNotes();
+        }
+      }
+
+      closeModal();
+    }
+
+    function deleteNote(id) {
+      notes = notes.filter(n => n.id !== id);
+      saveNotes();
+      renderNotes();
+    }
+
+    function togglePin(id) {
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        note.pinned = !note.pinned;
+        saveNotes();
+        renderNotes();
+      }
+    }
+
+    function saveNotes() {
+      localStorage.setItem('keepish-notes', JSON.stringify(notes));
+    }
+
+    // ===== MODAL =====
+    function openModal() {
+      currentNoteId = null;
+      noteTitle.value = '';
+      noteContent.value = '';
+      document.querySelectorAll('.color-btn')[0].click(); // default to white
+      modal.classList.add('active');
+      noteTitle.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+      currentNoteId = null;
+    }
+
+    // ===== DRAG & DROP =====
+    function dragStart(e) {
+      dragStartIndex = +e.target.dataset.index || Array.from(notesGrid.children).indexOf(e.target);
+      e.target.classList.add('dragging');
+      setTimeout(() => e.target.style.display = 'none', 0);
+    }
+
+    function dragEnter(e) {
+      e.preventDefault();
+      e.target.classList.add('over');
+    }
+
+    function dragOver(e) {
+      e.preventDefault();
+    }
+
+    function dragLeave(e) {
+      e.target.classList.remove('over');
+    }
+
+    function dragDrop(e) {
+      e.preventDefault();
+      e.target.classList.remove('over');
+      const dragEndIndex = Array.from(notesGrid.children).indexOf(e.target);
+
+      if (dragStartIndex !== null && dragStartIndex !== dragEndIndex) {
+        const draggedNote = notes.splice(dragStartIndex, 1)[0];
+        notes.splice(dragEndIndex, 0, draggedNote);
+        saveNotes();
+        renderNotes();
+      }
+
+      dragStartIndex = null;
+    }
+
+    function dragEnd() {
+      Array.from(notesGrid.children).forEach(card => {
+        card.classList.remove('dragging', 'over');
+        card.style.display = '';
+      });
+    }
+
+    // ===== UTILITIES =====
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffHours = (now - date) / (1000 * 60 * 60);
+
+      if (diffHours < 1) return 'Just now';
+      if (diffHours < 24) return `${Math.floor(diffHours)}h ago`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function getLuminance(hex) {
+      if (hex === '#fff') return 255;
+      if (hex === '#000') return 0;
+      let r = parseInt(hex.substr(1, 2), 16);
+      let g = parseInt(hex.substr(3, 2), 16);
+      let b = parseInt(hex.substr(5, 2), 16);
+      return (0.299 * r + 0.587 * g + 0.114 * b);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // ===== EVENT LISTENERS =====
+    function setupEventListeners() {
+      // Create note
+      createNoteCard.addEventListener('click', openModal);
+      fab.addEventListener('click', openModal);
+
+      // Modal
+      saveNoteBtn.addEventListener('click', saveNote);
+      cancelNoteBtn.addEventListener('click', closeModal);
+      modalCloseBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Enter' && e.ctrlKey && modal.classList.contains('active')) saveNote();
+      });
+
+      // Drag end cleanup
+      document.addEventListener('dragend', dragEnd);
+    }
+
+    // ===== DEMO DATA (First Load) =====
+    if (notes.length === 0) {
+      addNote('Welcome to Keepish!', '✅ Color notes\n📌 Pin important ones\n🌙 Dark mode\n🔄 Drag to reorder\n\nBuilt with ❤️ and zero AI (for the manual parts).', '#ccff90', true);
+      addNote('Grocery List', '🥚 Eggs\n🥛 Milk\n🍞 Bread\n🥑 Avocados', '#fff475');
+      addNote('Idea: AI Intern', 'Let Cursor handle:\n- Dark mode sync\n- Smooth drag & drop\n- Auto-luminance text\n\nManual parts: pin + color logic ✨', '#aecbfa');
+    }
+
+    // Start app
+    init();
+
+    // ===== EASTER EGG =====
+    window.keepish = {
+      sundar: () => console.log("Accidentally bookmarked. Promotion pending. 🚀"),
+      notes: () => notes
+    };
+  </script>
+</body>
+</html>
